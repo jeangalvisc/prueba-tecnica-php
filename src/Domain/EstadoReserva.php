@@ -22,9 +22,9 @@ enum EstadoReserva: string
     public function transicionesPermitidas(): array
     {
         return match ($this) {
-            self::Pendiente  => [self::Confirmada, self::Cancelada],
+            self::Pendiente => [self::Confirmada, self::Cancelada],
             self::Confirmada => [self::Cancelada],
-            self::Cancelada  => [],
+            self::Cancelada => [],
         };
     }
 
@@ -36,15 +36,15 @@ enum EstadoReserva: string
     public function etiqueta(): string
     {
         return match ($this) {
-            self::Pendiente  => 'Pendiente',
+            self::Pendiente => 'Pendiente',
             self::Confirmada => 'Confirmada',
-            self::Cancelada  => 'Cancelada',
+            self::Cancelada => 'Cancelada',
         };
     }
 
     /** @return list<string> */
     public static function valores(): array
     {
-        return array_map(static fn (self $e): string => $e->value, self::cases());
+        return array_map(static fn(self $e): string => $e->value, self::cases());
     }
 }

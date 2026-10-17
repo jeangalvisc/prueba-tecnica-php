@@ -96,17 +96,17 @@ final class Reserva
     public function toArray(): array
     {
         return [
-            'id'                 => $this->id,
-            'nombre_huesped'     => $this->nombreHuesped,
-            'email_huesped'      => $this->emailHuesped,
+            'id' => $this->id,
+            'nombre_huesped' => $this->nombreHuesped,
+            'email_huesped' => $this->emailHuesped,
             'nombre_alojamiento' => $this->nombreAlojamiento,
-            'fecha_entrada'      => $this->fechaEntrada->format('Y-m-d'),
-            'fecha_salida'       => $this->fechaSalida->format('Y-m-d'),
-            'noches'             => $this->noches(),
-            'estado'             => $this->estado->value,
-            'importe'            => $this->importe,
-            'notas'              => $this->notas,
-            'fecha_creacion'     => $this->fechaCreacion->format(DATE_ATOM),
+            'fecha_entrada' => $this->fechaEntrada->format('Y-m-d'),
+            'fecha_salida' => $this->fechaSalida->format('Y-m-d'),
+            'noches' => $this->noches(),
+            'estado' => $this->estado->value,
+            'importe' => $this->importe,
+            'notas' => $this->notas,
+            'fecha_creacion' => $this->fechaCreacion->format(DATE_ATOM),
         ];
     }
 }

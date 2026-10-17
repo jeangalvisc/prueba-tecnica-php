@@ -50,7 +50,7 @@ final class Kernel
 
         $this->errorHandler->setHtmlRenderer(function (int $status, string $message): string {
             return $this->twig()->render('error.html.twig', [
-                'status'  => $status,
+                'status' => $status,
                 'message' => $message,
             ]);
         });
@@ -85,26 +85,26 @@ final class Kernel
         $router = new Router();
 
         // API REST
-        $api = fn (): ReservaApiController => new ReservaApiController(
+        $api = fn(): ReservaApiController => new ReservaApiController(
             $this->reservaService(),
             new ReservaValidator($this->clock),
             new FiltroValidator(),
         );
 
-        $router->get('/api/reservas', fn (Request $r) => $api()->listar($r));
-        $router->post('/api/reservas', fn (Request $r) => $api()->crear($r));
-        $router->get('/api/reservas/{id}', fn (Request $r, array $p) => $api()->ver($r, $p));
-        $router->patch('/api/reservas/{id}/estado', fn (Request $r, array $p) => $api()->cambiarEstado($r, $p));
+        $router->get('/api/reservas', fn(Request $r) => $api()->listar($r));
+        $router->post('/api/reservas', fn(Request $r) => $api()->crear($r));
+        $router->get('/api/reservas/{id}', fn(Request $r, array $p) => $api()->ver($r, $p));
+        $router->patch('/api/reservas/{id}/estado', fn(Request $r, array $p) => $api()->cambiarEstado($r, $p));
 
         // Páginas web (Twig)
-        $pages = fn (): ReservaPageController => new ReservaPageController(
+        $pages = fn(): ReservaPageController => new ReservaPageController(
             $this->reservaService(),
             new FiltroValidator(),
             $this->twig(),
         );
 
-        $router->get('/', fn (Request $r) => $pages()->listado($r));
-        $router->get('/reservas/{id}', fn (Request $r, array $p) => $pages()->detalle($r, $p));
+        $router->get('/', fn(Request $r) => $pages()->listado($r));
+        $router->get('/reservas/{id}', fn(Request $r, array $p) => $pages()->detalle($r, $p));
 
         return $router;
     }

@@ -7,18 +7,18 @@ Construida en **PHP nativo** (sin frameworks como Laravel o Symfony), con render
 
 ## Enlace al despliegue
 
-> **URL en producción:** `[URL_DEL_DEPLOY]` *(ver sección Despliegue)*
+> **URL en producción:** `[URL_DEL_DEPLOY]` _(ver sección Despliegue)_
 
 ---
 
 ## 1. Requisitos previos
 
 - **PHP 8.2** o superior con las extensiones:
-  - `pdo` y `pdo_mysql`
-  - `mbstring`
-  - `json`
-  - `xml`
-  - `curl`
+    - `pdo` y `pdo_mysql`
+    - `mbstring`
+    - `json`
+    - `xml`
+    - `curl`
 - **MariaDB 10.4+** o **MySQL 8.0+**
 - **Composer** (para descargar Twig y PHPUnit)
 
@@ -27,19 +27,24 @@ Construida en **PHP nativo** (sin frameworks como Laravel o Symfony), con render
 ## 2. Cómo levantarlo en local (paso a paso)
 
 ### Paso 1: Clonar el repositorio y entrar al directorio
+
 ```bash
 git clone https://github.com/jeangalvisc/prueba-tecnica-php.git
 cd prueba-tecnica-php
 ```
 
 ### Paso 2: Instalar dependencias de Composer
+
 ```bash
 composer install
 ```
-*(Solo descarga `twig/twig` para las vistas y `phpunit/phpunit` para los tests de desarrollo).*
+
+_(Solo descarga `twig/twig` para las vistas y `phpunit/phpunit` para los tests de desarrollo)._
 
 ### Paso 3: Crear la base de datos e importar el esquema
+
 En Ubuntu / Debian con MariaDB o MySQL:
+
 ```bash
 # Crear la base de datos y usuario (si no existen)
 sudo mariadb -e "CREATE DATABASE IF NOT EXISTS reservas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -51,14 +56,18 @@ FLUSH PRIVILEGES;"
 mariadb -u reservas_app -preservas_local_pwd reservas < database/schema.sql
 ```
 
-*(En entornos como **MAMP** o **WAMP**, abre phpMyAdmin, crea la base de datos `reservas`, selecciónala y usa la pestaña **Importar** seleccionando el fichero `database/schema.sql`).*
+_(En entornos como **MAMP** o **WAMP**, abre phpMyAdmin, crea la base de datos `reservas`, selecciónala y usa la pestaña **Importar** seleccionando el fichero `database/schema.sql`)._
 
 ### Paso 4: Configurar el entorno
+
 Copia la plantilla de variables de entorno:
+
 ```bash
 cp .env.example .env
 ```
+
 Verifica que las credenciales en `.env` coinciden con tu motor de base de datos local:
+
 ```ini
 APP_ENV=dev
 APP_DEBUG=true
@@ -71,11 +80,15 @@ DB_PASS=reservas_local_pwd
 ```
 
 ### Paso 5: Arrancar el servidor de desarrollo
+
 Puedes arrancarlo con el script de Composer:
+
 ```bash
 composer run serve
 ```
+
 O directamente con el servidor integrado de PHP:
+
 ```bash
 php -S localhost:8000 -t public
 ```
@@ -170,32 +183,36 @@ El proyecto sigue una arquitectura limpia inspirada en DDD/Hexagonal, manteniend
 ## 5. Decisiones técnicas de diseño
 
 ### 1. ¿Por qué esta organización en capas?
+
 - **Separación de responsabilidades:** La lógica del negocio (`ReservaService`, `Reserva`, `EstadoReserva`) no tiene conocimiento de SQL ni de HTTP. Si el día de mañana se cambiara la base de datos a MongoDB o la API se consumiera por CLI, el núcleo permanece intacto.
 - **Inversión de dependencias:** El servicio depende de interfaces (`ReservaRepository`, `ReservaEventoRepository`, `TransactionManager`), lo que permite realizar tests unitarios ultrarrápidos con implementaciones en memoria sin tocar una base de datos real.
 - **Inyección de dependencias manual en `Kernel.php`:** Al no usar un framework con contenedores mágicos de reflexión, cada servicio se construye bajo demanda de forma explícita y transparente.
 
 ### 2. Máquina de estados estricta y concurrencia optimista
+
 - Los estados (`pendiente`, `confirmada`, `cancelada`) y sus transiciones están modelados mediante el enum `EstadoReserva`.
-  - `pendiente` &rarr; `confirmada` o `cancelada`.
-  - `confirmada` &rarr; `cancelada`.
-  - `cancelada` es un estado final e inmutable.
+    - `pendiente` &rarr; `confirmada` o `cancelada`.
+    - `confirmada` &rarr; `cancelada`.
+    - `cancelada` es un estado final e inmutable.
 - Si dos usuarios intentan cambiar el estado simultáneamente, la consulta SQL incluye control de concurrencia optimista:
-  ```sql
-  UPDATE reserva SET estado = :nuevo WHERE id = :id AND estado = :actual
-  ```
-  Si `rowCount() === 0`, el sistema devuelve un error `HTTP 409 Conflict` avisando al usuario de que la reserva ya fue modificada por otro proceso.
+    ```sql
+    UPDATE reserva SET estado = :nuevo WHERE id = :id AND estado = :actual
+    ```
+    Si `rowCount() === 0`, el sistema devuelve un error `HTTP 409 Conflict` avisando al usuario de que la reserva ya fue modificada por otro proceso.
 
 ### 3. Atomicidad garantizada
+
 Cada creación de reserva o cambio de estado genera obligatoriamente una fila en `reserva_evento`. Ambas operaciones se ejecutan dentro del mismo bloque transaccional (`TransactionManager::transactional`). Si falla el registro del evento, la modificación de la reserva hace rollback automático.
 
 ### 4. Seguridad en profundidad (Defense in Depth)
+
 - **Prepared Statements nativos:** Se desactiva la emulación (`PDO::ATTR_EMULATE_PREPARES = false`). Los parámetros se envían al motor de base de datos de forma separada del árbol de análisis sintáctico de la consulta, anulando cualquier riesgo de SQL Injection.
 - **Validación y saneamiento estricto:** El validador rechaza caracteres de control ASCII invisibles, valida emails con `FILTER_VALIDATE_EMAIL`, comprueba fechas existentes en calendario (`Y-m-d`), asegura que `fecha_salida > fecha_entrada` y que la estancia no supere un año.
 - **Manejo monetario sin pérdidas de precisión:** El importe se valida y gestiona como decimal estricto (`DECIMAL(10,2)` en SQL y comparaciones de cadena normalizada en PHP), evitando los conocidos errores de redondeo de los tipos flotantes IEEE 754.
 - **Protección XSS y CSRF:**
-  - En backend: Cabeceras `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, y verificación de cabeceras de origen en peticiones de mutación (`Origin` / `Sec-Fetch-Site`).
-  - En vistas: Twig con autoescape HTML activado por defecto. **No se utiliza el filtro `|raw` en ninguna parte de la aplicación.**
-  - En frontend: El DOM se construye mediante `textContent` y creación dinámica de elementos, nunca interpolando cadenas de usuario con `innerHTML`.
+    - En backend: Cabeceras `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, y verificación de cabeceras de origen en peticiones de mutación (`Origin` / `Sec-Fetch-Site`).
+    - En vistas: Twig con autoescape HTML activado por defecto. **No se utiliza el filtro `|raw` en ninguna parte de la aplicación.**
+    - En frontend: El DOM se construye mediante `textContent` y creación dinámica de elementos, nunca interpolando cadenas de usuario con `innerHTML`.
 - **Manejo de errores centralizado:** En modo producción (`APP_ENV=prod`), los errores 500 no muestran trazas ni detalles de base de datos al usuario; se registran en `var/log/app.log` y devuelven un mensaje genérico.
 
 ---
@@ -203,16 +220,16 @@ Cada creación de reserva o cambio de estado genera obligatoriamente una fila en
 ## 6. Qué haría diferente con más tiempo
 
 1. **Autenticación y Autorización (RBAC):**
-   - Incorporar autenticación mediante tokens JWT o sesiones HTTP seguras con cookies `HttpOnly`, `SameSite=Strict`.
-   - Diferenciar permisos: recepción (crear y ver), administración (confirmar importes y cancelaciones extraordinarias).
+    - Incorporar autenticación mediante tokens JWT o sesiones HTTP seguras con cookies `HttpOnly`, `SameSite=Strict`.
+    - Diferenciar permisos: recepción (crear y ver), administración (confirmar importes y cancelaciones extraordinarias).
 2. **Sistema de migraciones automatizadas:**
-   - En lugar de un archivo `.sql` monolítico, utilizar un gestor de migraciones liviano (como Phinx) para versionar cambios de esquema en equipo.
+    - En lugar de un archivo `.sql` monolítico, utilizar un gestor de migraciones liviano (como Phinx) para versionar cambios de esquema en equipo.
 3. **Eventos de dominio y colas asíncronas:**
-   - Desacoplar el envío de correos electrónicos de confirmación mediante una cola ligera (Redis / RabbitMQ) para que la respuesta HTTP tarde pocos milisegundos y no dependa del servidor SMTP.
+    - Desacoplar el envío de correos electrónicos de confirmación mediante una cola ligera (Redis / RabbitMQ) para que la respuesta HTTP tarde pocos milisegundos y no dependa del servidor SMTP.
 4. **Tests de integración / End-to-End:**
-   - Añadir tests funcionales con una base de datos SQLite en memoria o contenedor de pruebas levantando el servidor integrado de PHP.
+    - Añadir tests funcionales con una base de datos SQLite en memoria o contenedor de pruebas levantando el servidor integrado de PHP.
 5. **Auditoría completa:**
-   - Registrar el usuario o IP que realizó cada evento en la tabla `reserva_evento`.
+    - Registrar el usuario o IP que realizó cada evento en la tabla `reserva_evento`.
 
 ---
 
@@ -223,17 +240,20 @@ Una carga de 1.000 reservas por hora equivale a un promedio de ~0,3 escrituras p
 Para soportar este volumen y picos sin degradación, aplicaría los siguientes cambios:
 
 ### 1. Base de datos
+
 - **Arquitectura de réplica de lectura (Read Replicas):** Separar las conexiones de lectura y escritura. El listado de reservas y las consultas de disponibilidad se dirigen a nodos réplica de MySQL, mientras que las creaciones y cambios de estado van al nodo primario.
 - **Indexación y optimización de rangos:** Los índices compuestos `(fecha_entrada, fecha_salida)` y `(estado, fecha_entrada)` optimizan el escaneo de índices para consultas de solapamiento de fechas sin recurrir a escaneos de tabla completa.
 - **Particionamiento de tablas:** Si el historial acumula millones de reservas tras varios años, particionar la tabla `reserva` por rango anual de `fecha_entrada` o archivar reservas canceladas/pasadas en un esquema histórico.
 
 ### 2. Capa de aplicación y caché
+
 - **Caché en Redis:**
-  - Almacenar en Redis la disponibilidad y los datos maestros de alojamientos con invalidación por eventos.
-  - Implementar **Rate Limiting** en Redis mediante algoritmo de Token Bucket por IP o cliente API para mitigar scraping abusivo o ataques de denegación de servicio.
+    - Almacenar en Redis la disponibilidad y los datos maestros de alojamientos con invalidación por eventos.
+    - Implementar **Rate Limiting** en Redis mediante algoritmo de Token Bucket por IP o cliente API para mitigar scraping abusivo o ataques de denegación de servicio.
 - **Procesamiento asíncrono:** Mover notificaciones por email, generación de facturas PDF y webhooks de sincronización con Channel Managers / OTAs a trabajadores en segundo plano (workers CLI en PHP supervisados por Supervisor).
 
 ### 3. Infraestructura y servidores
+
 - **Arquitectura Stateless en contenedores:** Empaquetar la aplicación en una imagen Docker ligera con PHP 8.3-FPM + Nginx.
 - **Escalado horizontal:** Desplegar detrás de un balanceador de carga (AWS ALB o Cloudflare) con autoescalado basado en consumo de CPU / memoria.
 - **Ajuste de PHP-FPM:** Configurar `pm = dynamic` con valores adecuados de `pm.max_children` calculados en base a la RAM disponible del servidor para evitar saturación de procesos.
