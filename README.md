@@ -28,7 +28,7 @@ Construida en **PHP nativo** (sin frameworks como Laravel o Symfony), con render
 
 ### Paso 1: Clonar el repositorio y entrar al directorio
 ```bash
-git clone https://github.com/caribebyte/prueba-tecnica-php.git
+git clone https://github.com/jeangalvisc/prueba-tecnica-php.git
 cd prueba-tecnica-php
 ```
 
