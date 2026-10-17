@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:80"
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "true"
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: reservas
+      DB_USER: reservas_app
+      DB_PASS: reservas_secret_pwd
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/var/www/html
+
+  db:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret_pwd
+      MYSQL_DATABASE: reservas
+      MYSQL_USER: reservas_app
+      MYSQL_PASSWORD: reservas_secret_pwd
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-proot_secret_pwd"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mariadb_data:
