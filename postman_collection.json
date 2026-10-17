@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "MisterPlan — API de Reservas",
+    "_postman_id": "b3c9a670-8d4b-4a5c-9c7b-1a92e854f3b1",
+    "description": "Colección completa para probar la API REST de reservas en local o producción.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Listar reservas (con filtros opcionales)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reservas?estado=pendiente&q=&desde=&hasta=&pagina=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas"],
+          "query": [
+            { "key": "estado", "value": "pendiente", "description": "pendiente | confirmada | cancelada" },
+            { "key": "q", "value": "", "description": "Búsqueda por nombre de huésped" },
+            { "key": "desde", "value": "", "description": "YYYY-MM-DD" },
+            { "key": "hasta", "value": "", "description": "YYYY-MM-DD" },
+            { "key": "pagina", "value": "1" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Ver detalle de una reserva",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reservas/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas", "1"]
+        }
+      }
+    },
+    {
+      "name": "3. Crear nueva reserva (201 Created)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre_huesped\": \"Carlos Alcaraz\",\n  \"email_huesped\": \"carlos.alcaraz@example.es\",\n  \"nombre_alojamiento\": \"Hotel Arts Barcelona\",\n  \"fecha_entrada\": \"2026-11-15\",\n  \"fecha_salida\": \"2026-11-20\",\n  \"importe\": \"850.50\",\n  \"notas\": \"Llegada tarde sobre las 22:00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/reservas",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas"]
+        }
+      }
+    },
+    {
+      "name": "4. Confirmar reserva (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"confirmada\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/reservas/21/estado",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas", "21", "estado"]
+        }
+      }
+    },
+    {
+      "name": "5. Cancelar reserva (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"cancelada\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/reservas/21/estado",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas", "21", "estado"]
+        }
+      }
+    },
+    {
+      "name": "6. Error 400 — Validación (fechas o email incorrectos)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre_huesped\": \"\",\n  \"email_huesped\": \"email-no-valido\",\n  \"nombre_alojamiento\": \"Hotel Test\",\n  \"fecha_entrada\": \"2020-01-01\",\n  \"fecha_salida\": \"2019-01-01\",\n  \"importe\": \"-10.00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/reservas",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas"]
+        }
+      }
+    },
+    {
+      "name": "7. Error 404 — Reserva no existente",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reservas/99999",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas", "99999"]
+        }
+      }
+    },
+    {
+      "name": "8. Error 409 — Conflicto de estado (cambio no permitido)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"confirmada\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/reservas/4/estado",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reservas", "4", "estado"]
+        }
+      }
+    }
+  ]
+}
