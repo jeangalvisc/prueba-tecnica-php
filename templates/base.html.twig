@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MisterPlan — Reservas{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <header class="app-header">
+        <div class="container header-container">
+            <a href="/" class="brand">
+                <span class="brand-badge">MP</span>
+                <span class="brand-text">Mister<strong>Plan</strong></span>
+                <span class="brand-sub">Reservas</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/" class="nav-link {% block nav_listado %}{% endblock %}">Listado de reservas</a>
+            </nav>
+        </div>
+    </header>
+
+    <div id="feedback-alert" class="feedback-alert" role="alert" aria-live="polite" hidden>
+        <div class="container feedback-inner">
+            <span id="feedback-text"></span>
+            <button type="button" class="btn-close" id="feedback-close" aria-label="Cerrar">&times;</button>
+        </div>
+    </div>
+
+    <main class="app-main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="container footer-content">
+            <p>MisterPlan &mdash; Prueba técnica Desarrollador PHP</p>
+            <p class="text-muted">PHP nativo &bull; Twig &bull; JavaScript vanilla &bull; MySQL/MariaDB</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/api.js" type="module"></script>
+    <script src="/assets/js/ui.js" type="module"></script>
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

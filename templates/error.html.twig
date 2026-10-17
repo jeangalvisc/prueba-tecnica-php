@@ -1,0 +1,24 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Error {{ status }} — MisterPlan{% endblock %}
+
+{% block content %}
+<div class="card error-card">
+    <div class="error-code">{{ status }}</div>
+    <h1 class="error-title">
+        {% if status == 404 %}
+            Página o reserva no encontrada
+        {% elseif status == 400 %}
+            Petición incorrecta
+        {% elseif status == 409 %}
+            Conflicto en la operación
+        {% else %}
+            Ha ocurrido un error inesperado
+        {% endif %}
+    </h1>
+    <p class="error-message">{{ message }}</p>
+    <div class="error-actions">
+        <a href="/" class="btn btn-primary">Volver al listado</a>
+    </div>
+</div>
+{% endblock %}

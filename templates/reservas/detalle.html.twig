@@ -1,0 +1,135 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Reserva #{{ reserva.id }} — MisterPlan{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">&larr; Volver al listado de reservas</a>
+</div>
+
+<div class="page-header">
+    <div class="header-with-badge">
+        <h1 class="page-title">Reserva #{{ reserva.id }}</h1>
+        <div id="detalle-badge-container">
+            {% include "_partials/badge_estado.html.twig" with { estado: reserva.estado } %}
+        </div>
+    </div>
+    <div class="header-actions" id="detalle-actions">
+        {% if reserva.puedeConfirmarse() %}
+            <button type="button" class="btn btn-success" id="btn-confirmar-reserva" data-id="{{ reserva.id }}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Confirmar reserva
+            </button>
+        {% endif %}
+        {% if reserva.puedeCancelarse() %}
+            <button type="button" class="btn btn-danger-outline" id="btn-cancelar-reserva" data-id="{{ reserva.id }}">
+                Cancelar reserva
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid-details">
+    <!-- Columna Izquierda: Datos de la reserva -->
+    <div class="card detail-card">
+        <h2 class="card-title">Datos del alojamiento y estancia</h2>
+
+        <dl class="data-list">
+            <div class="data-item">
+                <dt>Alojamiento</dt>
+                <dd class="font-medium">{{ reserva.nombreAlojamiento }}</dd>
+            </div>
+            <div class="data-item">
+                <dt>Fecha de entrada</dt>
+                <dd>{{ reserva.fechaEntrada|date('d/m/Y') }}</dd>
+            </div>
+            <div class="data-item">
+                <dt>Fecha de salida</dt>
+                <dd>{{ reserva.fechaSalida|date('d/m/Y') }}</dd>
+            </div>
+            <div class="data-item">
+                <dt>Duración</dt>
+                <dd>{{ reserva.noches() }} noche{% if reserva.noches() != 1 %}s{% endif %}</dd>
+            </div>
+            <div class="data-item">
+                <dt>Importe total</dt>
+                <dd class="price-highlight">{{ reserva.importe|number_format(2, ',', '.') }} &euro;</dd>
+            </div>
+        </dl>
+
+        <h2 class="card-title mt-6">Datos del huésped</h2>
+        <dl class="data-list">
+            <div class="data-item">
+                <dt>Nombre completo</dt>
+                <dd class="font-medium">{{ reserva.nombreHuesped }}</dd>
+            </div>
+            <div class="data-item">
+                <dt>Email</dt>
+                <dd><a href="mailto:{{ reserva.emailHuesped }}" class="link">{{ reserva.emailHuesped }}</a></dd>
+            </div>
+            <div class="data-item">
+                <dt>Fecha de registro</dt>
+                <dd class="text-muted">{{ reserva.fechaCreacion|date('d/m/Y H:i') }}</dd>
+            </div>
+            <div class="data-item full-item">
+                <dt>Notas / Peticiones</dt>
+                <dd class="notes-content">
+                    {% if reserva.notas %}
+                        {{ reserva.notas|nl2br }}
+                    {% else %}
+                        <span class="text-muted italic">Sin notas adicionales</span>
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Columna Derecha: Timeline de eventos -->
+    <div class="card timeline-card">
+        <h2 class="card-title">Historial de eventos</h2>
+        <div class="timeline" id="timeline-container">
+            {% if eventos is empty %}
+                <p class="text-muted">No hay eventos registrados.</p>
+            {% else %}
+                {% for ev in eventos %}
+                    <div class="timeline-item timeline-{{ ev.tipo }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-type">{{ ev.tipo|capitalize }}</span>
+                                <time class="timeline-time">{{ ev.fechaCreacion|date('d/m/Y H:i') }}</time>
+                            </div>
+                            <p class="timeline-desc">{{ ev.descripcion }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Cancelación -->
+<div class="modal-backdrop" id="modal-confirmar-cancelar" hidden role="dialog" aria-modal="true" aria-labelledby="modal-cancel-title">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h2 id="modal-cancel-title" class="modal-title">Cancelar reserva</h2>
+            <button type="button" class="btn-close" id="btn-cerrar-cancelar" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Estás seguro/a de que deseas cancelar esta reserva?</p>
+            <p class="text-muted small">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btn-abortar-cancelar">No, mantener</button>
+            <button type="button" class="btn btn-danger" id="btn-ejecutar-cancelar">
+                <span class="btn-text">Sí, cancelar reserva</span>
+                <span class="spinner" hidden aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="/assets/js/detalle.js" type="module"></script>
+{% endblock %}

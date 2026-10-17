@@ -1,0 +1,8 @@
+{% set valor = estado.value is defined ? estado.value : estado %}
+{% if valor == 'confirmada' %}
+    <span class="badge badge-success">Confirmada</span>
+{% elseif valor == 'cancelada' %}
+    <span class="badge badge-danger">Cancelada</span>
+{% else %}
+    <span class="badge badge-warning">Pendiente</span>
+{% endif %}
