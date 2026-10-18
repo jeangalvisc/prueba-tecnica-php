@@ -7,7 +7,7 @@ Construida en **PHP nativo** (sin frameworks como Laravel o Symfony), con render
 
 ## Enlace al despliegue
 
-> **URL en producción:** `https://jeangreservas.alwaysdata.net/` _(ver sección Despliegue)_
+> **URL en producción:** `https://jeangreservas.alwaysdata.net/`
 
 ---
 
