@@ -215,7 +215,48 @@ Cada creación de reserva o cambio de estado genera obligatoriamente una fila en
     - En frontend: El DOM se construye mediante `textContent` y creación dinámica de elementos, nunca interpolando cadenas de usuario con `innerHTML`.
 - **Manejo de errores centralizado:** En modo producción (`APP_ENV=prod`), los errores 500 no muestran trazas ni detalles de base de datos al usuario; se registran en `var/log/app.log` y devuelven un mensaje genérico.
 
-## 6. se agrego un postman_collection.json en la raiz del proyecto para facilitar la interacción con la API.
+## 6. Qué haría diferente con más tiempo
+
+1. **Autenticación y Autorización (RBAC):**
+    - Incorporar autenticación mediante tokens JWT o sesiones HTTP seguras con cookies `HttpOnly`, `SameSite=Strict`.
+    - Diferenciar permisos: recepción (crear y ver), administración (confirmar importes y cancelaciones extraordinarias).
+2. **Sistema de migraciones automatizadas:**
+    - En lugar de un archivo `.sql` monolítico, utilizar un gestor de migraciones liviano (como Phinx) para versionar cambios de esquema en equipo.
+3. **Eventos de dominio y colas asíncronas:**
+    - Desacoplar el envío de correos electrónicos de confirmación mediante una cola ligera (Redis / RabbitMQ) para que la respuesta HTTP tarde pocos milisegundos y no dependa del servidor SMTP.
+4. **Tests de integración / End-to-End:**
+    - Añadir tests funcionales con una base de datos SQLite en memoria o contenedor de pruebas levantando el servidor integrado de PHP.
+5. **Auditoría completa:**
+    - Registrar el usuario o IP que realizó cada evento en la tabla `reserva_evento`.
+
+---
+
+## 7. Escalabilidad (1.000 reservas / hora)
+
+Una carga de 1.000 reservas por hora equivale a un promedio de ~0,3 escrituras por segundo, pero en el sector hotelero el tráfico presenta **picos pronunciados** (campañas promocionales, apertura de temporadas) donde las lecturas de disponibilidad y listados superan las escrituras en una proporción de 20:1 o superior.
+Para soportar este volumen y picos sin degradación, aplicaría los siguientes cambios:
+
+### 1. Base de datos
+
+- **Arquitectura de réplica de lectura (Read Replicas):** Separar las conexiones de lectura y escritura. El listado de reservas y las consultas de disponibilidad se dirigen a nodos réplica de MySQL, mientras que las creaciones y cambios de estado van al nodo primario.
+- **Indexación y optimización de rangos:** Los índices compuestos `(fecha_entrada, fecha_salida)` y `(estado, fecha_entrada)` optimizan el escaneo de índices para consultas de solapamiento de fechas sin recurrir a escaneos de tabla completa.
+- **Particionamiento de tablas:** Si el historial acumula millones de reservas tras varios años, particionar la tabla `reserva` por rango anual de `fecha_entrada` o archivar reservas canceladas/pasadas en un esquema histórico.
+
+### 2. Capa de aplicación y caché
+
+- **Caché en Redis:**
+    - Almacenar en Redis la disponibilidad y los datos maestros de alojamientos con invalidación por eventos.
+    - Implementar **Rate Limiting** en Redis mediante algoritmo de Token Bucket por IP o cliente API para mitigar scraping abusivo o ataques de denegación de servicio.
+- **Procesamiento asíncrono:** Mover notificaciones por email, generación de facturas PDF y webhooks de sincronización con Channel Managers / OTAs a trabajadores en segundo plano (workers CLI en PHP supervisados por Supervisor).
+
+### 3. Infraestructura y servidores
+
+- **Arquitectura Stateless en contenedores:** Empaquetar la aplicación en una imagen Docker ligera con PHP 8.3-FPM + Nginx.
+- **Escalado horizontal:** Desplegar detrás de un balanceador de carga (AWS ALB o Cloudflare) con autoescalado basado en consumo de CPU / memoria.
+- **Ajuste de PHP-FPM:** Configurar `pm = dynamic` con valores adecuados de `pm.max_children` calculados en base a la RAM disponible del servidor para evitar saturación de procesos.
+- **Almacenamiento y observabilidad:** Centralizar logs estructurados (JSON) en herramientas como Datadog, Grafana Loki o CloudWatch para alertas en tiempo real de picos de latencia o errores 5xx.
+
+## 8. se agrego un postman_collection.json en la raiz del proyecto para facilitar la interacción con la API.
 
 El json contiene las siguientes peticiones:
 1. Listar reservas (con filtros opcionales)
